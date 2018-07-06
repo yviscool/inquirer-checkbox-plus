@@ -7,7 +7,7 @@ var _ = require('lodash');
 var figures = require('figures');
 var Choices = require('inquirer/lib/objects/choices');
 
-class CheckboxPlus extends Prompt {
+class CheckBoxPlus extends Prompt {
 
     constructor(questions, rl, answers) {
         super(questions, rl, answers);
@@ -222,20 +222,18 @@ class CheckboxPlus extends Prompt {
         // Searching mode
         if (this.searching) {
 
-            message +=
-                '\n  ' +
-                    this.opt.searching
+            message += '\n  ' +
+                (this.opt.searching
                     ? this.opt.searching
-                    : chalk.cyan('Searching...');
+                    : chalk.cyan('Searching...'))
 
             // No choices
         } else if (!this.choices.length) {
 
-            message +=
-                '\n  ' +
-                    this.opt.noresult
+            message += '\n  ' +
+                (this.opt.noresult
                     ? this.opt.noresult
-                    : chalk.yellow('No results...');
+                    : chalk.yellow('No results...'))
 
             // Has choices
         } else {
@@ -402,7 +400,7 @@ class CheckboxPlus extends Prompt {
 
 }
 
-module.exports = CheckboxPlus;
+module.exports = BaseCheckbox;
 
 
 
