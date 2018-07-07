@@ -5,11 +5,20 @@ Better [inquirer-checkbox-plus-prompt](https://github.com/faressoft/inquirer-che
 
 ### Installation
 
-
+``` shell
+npm install inquirer-checkbox-plus
+```
 
 ### Usage
 
+```javascript
+inquirer.registerPrompt('checkbox-plus', require('inquirer-checkbox-plus'));
 
+inquirer.prompt({
+  type: 'checkbox-plus',
+  ...
+})
+```
 
 ### options
 
