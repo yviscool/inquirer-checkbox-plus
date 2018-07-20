@@ -33,6 +33,18 @@ var colors = [{
     disabled: false
 }, ];
 
+var person = [
+    {name: 'chenxing', type:'name'},
+    {name: 'zhoujielun', type: 'name'},
+]
+
+var age = [
+    {name:1,},
+    {name:2,},
+    {name:3,},
+    {name:4,},
+    {name:5,}
+]
 
 var i = 0;
 
@@ -42,7 +54,7 @@ inquirer.prompt([{
     message: 'Enter colors',
     pageSize: 4,
     highlight: true,
-    searchable: true,
+    // searchable: true,
     enablebackspace: true,
     default: ['yellow', 'red', {name: 'black'}],
     footer: '按上下键移动',
@@ -83,6 +95,15 @@ inquirer.prompt([{
 
         });
 
+    },
+    subsource : function(choice, type){
+        if (type === 'color'){
+            return Promise.resolve(person);
+        }
+        if (type === 'name'){
+            return Promise.resolve(age)
+        }
+        return Promise.resolve([])
     }
 }]).then(function(answers) {
 

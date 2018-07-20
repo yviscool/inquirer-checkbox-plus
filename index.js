@@ -2,6 +2,7 @@ var _ = require('lodash');
 var chalk = require('chalk');
 var cliCursor = require('cli-cursor');
 var figures = require('figures');
+var ansiEscapes = require('ansi-escapes');
 var Base = require('inquirer/lib/prompts/base');
 var Choices = require('inquirer/lib/objects/choices');
 var observe = require('inquirer/lib/utils/events');
@@ -9,8 +10,42 @@ var Paginator = require('inquirer/lib/utils/paginator');
 
 var {
     map,
-    takeUntil
+    skip,
+    share,
+    filter,
+    takeUntil,
 } = require('rxjs/operators');
+
+class InnerChoices extends Choices{
+  constructor(choices, answers) {
+    super(choices, answers)
+    this.type = choices.length ? choices[0].type : void 0;
+    super.forEach(choice => {
+        choice.type = this.type;
+    })
+    this.realChoices.forEach(choice => {
+        choice.type = this.type;
+    })
+  }
+
+  setHead(head, pointer, heads){
+    super.forEach(choice => {
+        choice.head = head;
+        choice.heads = heads;
+        choice.headPointer = pointer;
+    })
+  }
+
+  setTail(pointer, choices){
+    var currentChoice = super.getChoice(pointer);
+    currentChoice.tail = choices;
+    choices.setHead(currentChoice, pointer, this);
+  }
+
+  hasHead(pointer){
+    return !!super.getChoice(pointer).head;
+  }
+}
 
 class CheckBoxPlus extends Base {
 
@@ -37,10 +72,11 @@ class CheckBoxPlus extends Base {
             this.throwParamError('source');
         }
 
+
         // Init
         this.pointer = 0;
         this.firstSourceLoading = true;
-        this.choices = new Choices([], answers);
+        this.choices =  new InnerChoices([], answers) ;
         this.checkedChoices = [];
         this.value = [];
         this.lastQuery = null;
@@ -56,6 +92,7 @@ class CheckBoxPlus extends Base {
             answer: val => val, // 对 应答部分进行扩展
             keypress: val => val, // 对 searchable 状态下 按键进行扩展 
         });
+        // this.choicesList = [];
         var header = this.opt.header;
         var footer = this.opt.footer;
         var searching = this.opt.searching;
@@ -87,6 +124,8 @@ class CheckBoxPlus extends Base {
         var self = this;
 
         this.done = callback;
+
+        this.rl.input.setMaxListeners(20);
 
         this.executeSource().then(function(result) {
 
@@ -121,6 +160,42 @@ class CheckBoxPlus extends Base {
                 events.iKey
                     .pipe(takeUntil(validation.success))
                     .forEach(self.onInverseKey.bind(self));
+                // H key events 
+                events.keypress
+                    .pipe(
+                        filter(({ key }) => key.name === 'h' || (key.name === 'h' && key.ctrl)),
+                        share(),
+                    )
+                    .pipe(takeUntil(validation.success))
+                    .forEach(self.onHKey.bind(self))
+
+                // L key events 
+                events.keypress
+                    .pipe(
+                        filter(({ key }) => key.name === 'l' || (key.name === 'l' && key.ctrl)),
+                        share(),
+                    )
+                    .pipe(takeUntil(validation.success))
+                    .forEach(self.onLKey.bind(self))
+
+                // gg key events 
+                events.keypress
+                    .pipe(
+                        filter(({ key }) => key.name === 'g' || (key.name === 'g' && key.ctrl)),
+                        skip(2),
+                        share(),
+                    )
+                    .pipe(takeUntil(validation.success))
+                    .forEach(self.onHomeKey.bind(self))
+
+                // G key events 
+                events.keypress
+                    .pipe(
+                        filter(({ key }) => key.sequence === 'G' || (key.sequence === 'G' && key.ctrl)),
+                        share(),
+                    )
+                    .pipe(takeUntil(validation.success))
+                    .forEach(self.onEndKey.bind(self))
 
             } else {
                 events.keypress
@@ -206,7 +281,7 @@ class CheckBoxPlus extends Base {
      * 
      * @overwrite 
      */
-    render(error) {
+    render(error, enabledSubSource) {
 
         // Render question
         var message = this.getQuestion();
@@ -240,7 +315,7 @@ class CheckBoxPlus extends Base {
                     'or type anything to filter the list)'
                 );
 
-        } else if (!this.opt.searchable) {
+        } else if (!this.opt.searchable && this.firstRender) {
 
             message +=
                 '(Press ' +
@@ -465,6 +540,32 @@ class CheckBoxPlus extends Base {
         this.backspace = false;
     }
 
+    onHKey(){
+        if (!this.choices.hasHead(this.pointer)){
+            return this.bell();
+        }
+        var currentChoice = this.choices.getChoice(this.pointer);
+        this.choices = currentChoice.heads;
+        this.pointer = currentChoice.headPointer;
+        this.render();
+    }
+
+    onLKey(){
+        // var len = this.choices.realLength;
+        this.executeSource(true);
+        this.render();
+    }
+
+    onHomeKey(){
+        this.pointer = 0;
+        this.render();
+    }
+
+    onEndKey(){
+        this.pointer = this.choices.realLength - 1 ;
+        this.render();
+    }
+
     /**
      * Toggle (check/uncheck) a specific choice
      *
@@ -510,8 +611,7 @@ class CheckBoxPlus extends Base {
     }
 
 
-    executeSource() {
-
+    executeSource(enabledSubSource) {
         var self = this;
         var sourcePromise = null;
 
@@ -525,9 +625,9 @@ class CheckBoxPlus extends Base {
             return;
         }
 
-
-        if (this.opt.searchable) {
-            // add 
+        if (enabledSubSource){
+            sourcePromise = this.opt.subsource(this.choices, this.choices.getChoice(0).type);
+        } else if (this.opt.searchable){
             sourcePromise = this.opt.source(this.answers, this.rl.line);
         } else {
             sourcePromise = this.opt.source(this.answers, null);
@@ -547,8 +647,35 @@ class CheckBoxPlus extends Base {
             // Reset the searching status
             self.searching = false;
 
+
+
             // Save the new choices
-            self.choices = new Choices(choices, self.answers);
+            var choices = new InnerChoices(choices, self.answers);
+
+
+            // if (!choices.getChoice(0).type){
+            //     return self.bell();
+            // }
+
+            if (!self.choices.length){
+                self.choices = choices;
+            } else {
+                if (!self.choices.getChoice(0).type){
+                    self.render();
+                    self.pointer = 0;
+                    self.default = null;
+                    return;
+                }
+                self.choices.setTail(self.pointer, choices);
+            }
+
+            // if (self.firstRender){
+            //     self.choicesList[0] = self.choices;
+            // } else {
+            //     self.choicesList[1].push()
+            // }
+
+            self.choices = choices;
 
             // Foreach choice
             self.choices.forEach(function(choice) {
@@ -588,6 +715,9 @@ class CheckBoxPlus extends Base {
         this.filterSearch = !this.filterSearch;
     }
 
+    bell(){
+        process.stdout.write(ansiEscapes.beep);
+    }
 }
 
 module.exports = CheckBoxPlus;
