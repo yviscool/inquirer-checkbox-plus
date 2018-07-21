@@ -45,10 +45,10 @@ inquirer.prompt([{
     searchable: true,
     enablebackspace: true,
     default: ['yellow', 'red', {name: 'black'}],
-    footer: '按上下键移动',
+    footer: 'move up/down to select',
     header: 'press space to select',
-    searching: '正在努力搜索中',
-    noresult: '没有找到任何结果',
+    searching: 'searching....',
+    noresult: 'nothing....',
     validate: function(answer) {
 
         if (answer.length == 0) {

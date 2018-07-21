@@ -16,35 +16,37 @@ var {
     takeUntil,
 } = require('rxjs/operators');
 
-class InnerChoices extends Choices{
-  constructor(choices, answers) {
-    super(choices, answers)
-    this.type = choices.length ? choices[0].type : void 0;
-    super.forEach(choice => {
-        choice.type = this.type;
-    })
-    this.realChoices.forEach(choice => {
-        choice.type = this.type;
-    })
-  }
+class InnerChoices extends Choices {
+    constructor(choices, answers) {
+        super(choices, answers)
+        this.type = choices.length ? choices[0].type : void 0;
+        super.forEach(choice => {
+            choice.type = this.type;
+        })
+        this.realChoices.forEach(choice => {
+            choice.type = this.type;
+        })
+    }
 
-  setHead(head, pointer, heads){
-    super.forEach(choice => {
-        choice.head = head;
-        choice.heads = heads;
-        choice.headPointer = pointer;
-    })
-  }
+    setHead(head, pointer, heads) {
+        super.forEach(choice => {
+            choice.head = head;
+            choice.heads = heads;
+            choice.headPointer = pointer;
+        })
+    }
 
-  setTail(pointer, choices){
-    var currentChoice = super.getChoice(pointer);
-    currentChoice.tail = choices;
-    choices.setHead(currentChoice, pointer, this);
-  }
+    setTail(pointer, choices) {
+        var currentChoice = super.getChoice(pointer);
+        currentChoice.tail = choices;
+        choices.setHead(currentChoice, pointer, this);
+    }
 
-  hasHead(pointer){
-    return !!super.getChoice(pointer).head;
-  }
+    hasHead(pointer) {
+        var realChoiceExist = super.getChoice(pointer) || {};
+        // if choice is disabled then get the choice[0].head
+        return realChoiceExist.head ? realChoiceExist.head : this.choices[0].head;
+    }
 }
 
 class CheckBoxPlus extends Base {
@@ -76,7 +78,7 @@ class CheckBoxPlus extends Base {
         // Init
         this.pointer = 0;
         this.firstSourceLoading = true;
-        this.choices =  new InnerChoices([], answers) ;
+        this.choices = new InnerChoices([], answers);
         this.checkedChoices = [];
         this.value = [];
         this.lastQuery = null;
@@ -92,7 +94,6 @@ class CheckBoxPlus extends Base {
             answer: val => val, // 对 应答部分进行扩展
             keypress: val => val, // 对 searchable 状态下 按键进行扩展 
         });
-        // this.choicesList = [];
         var header = this.opt.header;
         var footer = this.opt.footer;
         var searching = this.opt.searching;
@@ -113,7 +114,6 @@ class CheckBoxPlus extends Base {
         this.opt.footer = _.isFunction(footer) ? footer() : footer;
         this.opt.searching = _.isFunction(searching) ? searching() : searching;
         this.opt.noresult = _.isFunction(noresult) ? noresult() : noresult;
-
     }
 
     /**
@@ -127,7 +127,7 @@ class CheckBoxPlus extends Base {
 
         this.rl.input.setMaxListeners(20);
 
-        this.executeSource().then(function(result) {
+        this.executeSource().then(function (result) {
 
             var events = observe(self.rl)
 
@@ -160,40 +160,28 @@ class CheckBoxPlus extends Base {
                 events.iKey
                     .pipe(takeUntil(validation.success))
                     .forEach(self.onInverseKey.bind(self));
+                // extend 
                 // H key events 
                 events.keypress
-                    .pipe(
-                        filter(({ key }) => key.name === 'h' || (key.name === 'h' && key.ctrl)),
-                        share(),
-                    )
+                    .pipe(...self.hKey())
                     .pipe(takeUntil(validation.success))
                     .forEach(self.onHKey.bind(self))
 
                 // L key events 
                 events.keypress
-                    .pipe(
-                        filter(({ key }) => key.name === 'l' || (key.name === 'l' && key.ctrl)),
-                        share(),
-                    )
+                    .pipe(...self.lKey())
                     .pipe(takeUntil(validation.success))
                     .forEach(self.onLKey.bind(self))
 
                 // gg key events 
                 events.keypress
-                    .pipe(
-                        filter(({ key }) => key.name === 'g' || (key.name === 'g' && key.ctrl)),
-                        skip(2),
-                        share(),
-                    )
+                    .pipe(...self.homeKey())
                     .pipe(takeUntil(validation.success))
                     .forEach(self.onHomeKey.bind(self))
 
                 // G key events 
                 events.keypress
-                    .pipe(
-                        filter(({ key }) => key.sequence === 'G' || (key.sequence === 'G' && key.ctrl)),
-                        share(),
-                    )
+                    .pipe(...self.endKey())
                     .pipe(takeUntil(validation.success))
                     .forEach(self.onEndKey.bind(self))
 
@@ -228,7 +216,7 @@ class CheckBoxPlus extends Base {
         var highlight = this.opt.highlight;
 
         // Foreach choice
-        choices.forEach(function(choice, index) {
+        choices.forEach(function (choice, index) {
 
             // Is a separator
             if (choice.type === 'separator') {
@@ -366,7 +354,7 @@ class CheckBoxPlus extends Base {
             var changed = choicesStr !== realChoiceStr;
             if (changed) {
                 choicesStr = _.slice(realChoiceStr.split('\n'), 0, -1)
-                realChoiceStr = this.opt.footer ? (choicesStr.join('\n') + '\n' + this.opt.footer) : realChoiceStr;
+                realChoiceStr = this.opt.footer ? choicesStr.join('\n') + '\n' + this.opt.footer : realChoiceStr;
             }
             message += '\n' + realChoiceStr;
 
@@ -429,14 +417,14 @@ class CheckBoxPlus extends Base {
 
         var checkedChoices = this.checkedChoices;
         var self = this;
-        this.choices.forEach(function(choice) {
+        this.choices.forEach(function (choice) {
             if (choice.type !== 'separator') {
                 choice.checked = !choice.checked;
                 // add
                 if (choice.checked) {
                     checkedChoices.push(choice);
                 } else {
-                    _.remove(checkedChoices, function(checkedChoice) {
+                    _.remove(checkedChoices, function (checkedChoice) {
                         return _.isEqual(choice.value, checkedChoice.value);
                     });
                 }
@@ -492,28 +480,28 @@ class CheckBoxPlus extends Base {
      */
     onSpaceKey() {
 
-            // When called no results
-            if (!this.choices.getChoice(this.pointer)) {
-                return;
-            }
-
-            this.toggleChoice(this.choices.getChoice(this.pointer));
-            this.render();
-
+        // When called no results
+        if (!this.choices.getChoice(this.pointer)) {
+            return;
         }
-        /**
-         *  @overwrite 
-         */
+
+        this.toggleChoice(this.choices.getChoice(this.pointer));
+        this.render();
+
+    }
+    /**
+     *  @overwrite 
+     */
     onAllKey() {
 
         var checkedChoices = this.checkedChoices;
 
         var shouldBeChecked = Boolean(
-            this.choices.find(function(choice) {
+            this.choices.find(function (choice) {
                 return choice.type !== 'separator' && !choice.checked;
             })
         );
-        this.choices.forEach(function(choice) {
+        this.choices.forEach(function (choice) {
             if (choice.type !== 'separator') {
                 choice.checked = shouldBeChecked;
             }
@@ -540,30 +528,71 @@ class CheckBoxPlus extends Base {
         this.backspace = false;
     }
 
-    onHKey(){
-        if (!this.choices.hasHead(this.pointer)){
+    onHKey() {
+        if (!this.choices.hasHead(this.pointer) || !this.opt.subsource) {
             return this.bell();
         }
         var currentChoice = this.choices.getChoice(this.pointer);
+        // if currentChoice is disabled, currentChoice will be undefined
+        // so we should get the raw choice
+        currentChoice  = currentChoice || this.choices.choices[0];
         this.choices = currentChoice.heads;
         this.pointer = currentChoice.headPointer;
+        this.checkedChoices.length = 0;
         this.render();
     }
 
-    onLKey(){
-        // var len = this.choices.realLength;
+    onLKey() {
+        // if this.choices doest not have realChoice then return 
+        if (!this.choices.realLength || !this.opt.subsource){
+            return this.bell();
+        }
+        this.checkedChoices.length = 0;
         this.executeSource(true);
         this.render();
     }
 
-    onHomeKey(){
+    onHomeKey() {
         this.pointer = 0;
         this.render();
     }
 
-    onEndKey(){
-        this.pointer = this.choices.realLength - 1 ;
+    onEndKey() {
+        this.pointer = this.choices.realLength - 1;
         this.render();
+    }
+
+    // H key event
+    hKey() {
+        return [
+            filter(({ key }) => key.name === 'h' || (key.name === 'h' && key.ctrl)),
+            share(),
+        ]
+    }
+
+    // l key event
+    lKey() {
+        return [
+            filter(({ key }) => key.name === 'l' || (key.name === 'l' && key.ctrl)),
+            share(),
+        ]
+    }
+
+    // gg key events 
+    homeKey() {
+        return [
+            filter(({ key }) => key.name === 'g' || (key.name === 'g' && key.ctrl)),
+            skip(1),
+            share(),
+        ]
+    }
+
+    // G key events 
+    endKey() {
+        return [
+            filter(({ key }) => key.sequence === 'G' || (key.sequence === 'G' && key.ctrl)),
+            share(),
+        ]
     }
 
     /**
@@ -583,7 +612,7 @@ class CheckBoxPlus extends Base {
         _.remove(this.value, _.isEqual.bind(null, choice.value));
 
         // Remove the checkedChoices with the value of the current choice
-        _.remove(this.checkedChoices, function(checkedChoice) {
+        _.remove(this.checkedChoices, function (checkedChoice) {
             return _.isEqual(choice.value, checkedChoice.value);
         });
 
@@ -625,9 +654,13 @@ class CheckBoxPlus extends Base {
             return;
         }
 
-        if (enabledSubSource){
-            sourcePromise = this.opt.subsource(this.choices, this.choices.getChoice(0).type);
-        } else if (this.opt.searchable){
+        var choice = this.choices.getChoice(0) ;
+        var type = choice && choice.type;
+        var realChoice = this.choices.getChoice(this.pointer);
+
+        if (enabledSubSource) {
+            sourcePromise = this.opt.subsource(realChoice , type);
+        } else if (this.opt.searchable) {
             sourcePromise = this.opt.source(this.answers, this.rl.line);
         } else {
             sourcePromise = this.opt.source(this.answers, null);
@@ -637,7 +670,12 @@ class CheckBoxPlus extends Base {
         this.lastSourcePromise = sourcePromise;
         this.searching = true;
 
-        sourcePromise.then(function(choices) {
+
+        if (!(sourcePromise instanceof Promise)){
+            throw new Error('source/subsource function must return a Promise');
+        }
+
+        sourcePromise.then(function (choices) {
 
             // Is not the last issued promise
             if (self.lastSourcePromise !== sourcePromise) {
@@ -648,37 +686,29 @@ class CheckBoxPlus extends Base {
             self.searching = false;
 
 
-
             // Save the new choices
             var choices = new InnerChoices(choices, self.answers);
 
-
-            // if (!choices.getChoice(0).type){
-            //     return self.bell();
-            // }
-
-            if (!self.choices.length){
+            if (!self.choices.length) {
                 self.choices = choices;
             } else {
-                if (!self.choices.getChoice(0).type){
+                var currentRealChoice = self.choices.getChoice(self.pointer) || {};
+             
+                if (!!choices.length && currentRealChoice.type ) {
+                    self.choices.setTail(self.pointer, choices);
+                } else {
+                // currentRealChoice dost not have type and the children choices doest not have length , it will return
                     self.render();
-                    self.pointer = 0;
                     self.default = null;
                     return;
                 }
-                self.choices.setTail(self.pointer, choices);
+       
             }
-
-            // if (self.firstRender){
-            //     self.choicesList[0] = self.choices;
-            // } else {
-            //     self.choicesList[1].push()
-            // }
 
             self.choices = choices;
 
             // Foreach choice
-            self.choices.forEach(function(choice) {
+            self.choices.forEach(function (choice) {
 
                 // Is the current choice included in the current checked choices
                 if (_.findIndex(self.value, _.isEqual.bind(null, choice.value)) != -1) {
@@ -694,7 +724,6 @@ class CheckBoxPlus extends Base {
                     if (_.findIndex(self.default, _.isEqual.bind(null, choice.value)) != -1) {
                         self.toggleChoice(choice, true);
                     }
-
                 }
 
             });
@@ -702,7 +731,7 @@ class CheckBoxPlus extends Base {
             // Reset the pointer to select the first choice
             self.pointer = 0;
             self.render();
-            self.default = null
+            self.default = null;
 
         });
 
@@ -715,7 +744,7 @@ class CheckBoxPlus extends Base {
         this.filterSearch = !this.filterSearch;
     }
 
-    bell(){
+    bell() {
         process.stdout.write(ansiEscapes.beep);
     }
 }

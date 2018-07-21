@@ -1,112 +1,114 @@
 var inquirer = require('inquirer');
-var fuzzy = require('fuzzy');
 
 inquirer.registerPrompt('checkbox-plus', require('./index'));
 
-var colors = [{
-    name: 'The red color',
-    value: 'red',
-    short: 'red',
+var Phone = [{
+    name: 'XiaoMi',
+    value: 'MI',
+    short: 'MI',
     disabled: false,
-    type: 'color'
+    type: 'cellphone'
 }, {
-    name: 'The blue color',
-    value: 'blue',
-    short: 'blue',
-    disabled: true
+    name: 'Google',
+    value: 'Google',
+    short: 'Google',
+    disabled: true,
+    type: 'cellphone',
 }, {
-    name: 'The green color',
+    name: 'HUAWEI',
     value: 'green',
     short: 'green',
-    disabled: false
+    disabled: false,
+    type: 'cellphone',
 }, {
-    name: 'The yellow color',
-    value: 'yellow',
-    short: 'yellow',
-    disabled: false
-}, {
-    name: 'The black color',
-    value: {
-        name: 'black'
-    },
-    short: 'black',
-    disabled: false
-}, ];
+    name: 'iPhone',
+    value: 'iPhone',
+    short: 'iPhone',
+    disabled: false,
+    type: 'cellphone',
+}];
 
-var person = [
-    {name: 'chenxing', type:'name'},
-    {name: 'zhoujielun', type: 'name'},
+var iPhone = [
+    { name: 'iPhone 6s', type: 'name', disabled: true, },
+    { name: 'iPhone 8 plus', type: 'name', disabled: true, },
+    { name: 'iPhone X', type: 'name', disabled: true, },
+]
+var XiaoMi = [
+    { name: 'MI note', type: 'name', },
+    { name: 'MI plus', type: 'name', },
+    { name: 'Mi 3', type: 'name' },
+    { name: 'Mi 4', type: 'name' },
+    { name: 'Mi 5', type: 'name' },
+    { name: 'Mi 6', type: 'name' },
+    { name: 'Mi 8', type: 'name', },
 ]
 
-var age = [
-    {name:1,},
-    {name:2,},
-    {name:3,},
-    {name:4,},
-    {name:5,}
+var MiNote = [
+    { name: 'Mi note I', type: 'name' },
+    { name: 'Mi note II' },
+    { name: 'Mi note III' },
+]
+
+var Note = [
+    { name: 1 },
+    { name: 2 },
+]
+
+var MiPlus = [
+    { name: 'Mi 3 plus' },
+    { name: 'Mi 4 plus' },
+    { name: 'Mi 5 plus' },
 ]
 
 var i = 0;
 
 inquirer.prompt([{
     type: 'checkbox-plus',
-    name: 'colors',
-    message: 'Enter colors',
+    name: 'phone',
+    message: 'select cellphone?',
     pageSize: 4,
     highlight: true,
-    // searchable: true,
-    enablebackspace: true,
-    default: ['yellow', 'red', {name: 'black'}],
-    footer: '按上下键移动',
+    default: ['iPhone', 'MI'],
+    footer: 'move up/down to select',
     header: 'press space to select',
-    searching: '正在努力搜索中',
-    noresult: '没有找到任何结果',
-    validate: function(answer) {
+    searching: 'searching....',
+    noresult: 'nothing..',
+    validate: function (answer) {
 
         if (answer.length == 0) {
-            return 'You must choose at least one color.';
+            return 'You must choose at least one phone.';
         }
 
         return true;
 
     },
-    source: function(answersSoFar, input) {
+    source: function (answersSoFar, input) {
 
-        input = input || '';
+        // input = input || '';
 
-        return new Promise(function(resolve) {
-
-            var fuzzyResult = fuzzy.filter(input, colors, {
-                extract: function(item) {
-                    return item['name'];
-                }
-            });
-
-            var data = fuzzyResult.map(function(element) {
-                return element.original;
-            });
-
-            if (i === 0) {
-                resolve(data);
-                i++;
-            } else {
-                setTimeout(resolve, 500, data)
-            }
-
-        });
+        return Promise.resolve(Phone)
 
     },
-    subsource : function(choice, type){
-        if (type === 'color'){
-            return Promise.resolve(person);
+    subsource: function (choice, type) {
+        if (choice.name === 'iPhone') {
+            return Promise.resolve(iPhone);
         }
-        if (type === 'name'){
-            return Promise.resolve(age)
+        if (choice.name === 'XiaoMi') {
+            return Promise.resolve(XiaoMi);
+        }
+        if (choice.name === 'MI note') {
+            return Promise.resolve(MiNote);
+        }
+        if (choice.name === 'MI plus') {
+            return Promise.resolve(MiPlus);
+        }
+        if (choice.name === 'Mi note I') {
+            return Promise.resolve(Note);
         }
         return Promise.resolve([])
     }
-}]).then(function(answers) {
+}]).then(function (answers) {
 
-    console.log(answers.colors);
+    console.log(answers.phone);
 
 }).catch(console.log)
