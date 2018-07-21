@@ -539,6 +539,8 @@ class CheckBoxPlus extends Base {
         this.choices = currentChoice.heads;
         this.pointer = currentChoice.headPointer;
         this.checkedChoices.length = 0;
+        // store parent checkedChoices 
+        this.checkedChoices.push(...this.choices.filter(choice => choice.checked))
         this.render();
     }
 

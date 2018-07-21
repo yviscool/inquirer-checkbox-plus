@@ -33,4 +33,36 @@ Takes `type`, `name`, `message`, `source`[, `filter`, `validate`, `default`, `pa
 * **enablebackspace**: (Boolean) If `true`, backspace will not emit `keypress` event
 * **keypress** : (Function), args (events, validation, prompt), events is a observable which can bind any keypress event, validation is observable which can be used with events, prompt is this 
 
+see `example.js`
+
+### category 
+
+
+![demo](https://github.com/yviscool/inquirer-checkbox-plus/blob/master/demo.gif)
+
+
+Do not enable `searchable` options.
+
+
+```javascript
+inquirer.prompt([{
+    type: 'checkbox-plus',
+    ...
+    source: function (answersSoFar, input) {
+
+        return Promise.resolve(...)
+
+    },
+    subsource: function (choice, type) {
+    	...
+        return Promise.resolve([])
+    }
+}])atch(console.log)
+```
+
+use `gg/G` key to return the top/bottom. `h/l` key to change the cagetory.
+
+see `example01.js`
+
+
 
