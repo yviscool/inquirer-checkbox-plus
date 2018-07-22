@@ -691,7 +691,7 @@ class CheckBoxPlus extends Base {
             // Save the new choices
             var choices = new InnerChoices(choices, self.answers);
 
-            if (!self.choices.length) {
+            if (!self.choices.length || self.opt.searchable) {
                 self.choices = choices;
             } else {
                 var currentRealChoice = self.choices.getChoice(self.pointer) || {};

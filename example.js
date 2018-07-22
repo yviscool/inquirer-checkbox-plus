@@ -8,7 +8,6 @@ var colors = [{
     value: 'red',
     short: 'red',
     disabled: false,
-    type: 'color'
 }, {
     name: 'The blue color',
     value: 'blue',
