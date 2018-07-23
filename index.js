@@ -14,6 +14,7 @@ var {
     share,
     filter,
     takeUntil,
+    bufferCount,
 } = require('rxjs/operators');
 
 class InnerChoices extends Choices {
@@ -584,7 +585,7 @@ class CheckBoxPlus extends Base {
     homeKey() {
         return [
             filter(({ key }) => key.name === 'g' || (key.name === 'g' && key.ctrl)),
-            skip(1),
+            bufferCount(2),
             share(),
         ]
     }

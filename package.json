@@ -1,6 +1,6 @@
 {
     "name": "inquirer-checkbox-plus",
-    "version": "0.9.9",
+    "version": "1.0.1",
     "description": "better inquirer-checkbox-plus-prompt",
     "main": "index.js",
     "repository": {
