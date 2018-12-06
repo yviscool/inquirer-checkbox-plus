@@ -404,7 +404,9 @@ class CheckBoxPlus extends Base {
      * @return {Array}
      */
     getCurrentValue() {
-
+        this.checkedChoices = this.checkedChoices.filter(function(choice) {
+          return Boolean(choice.checked) && !choice.disabled;
+        })
         this.selection = _.map(this.checkedChoices, 'short');
         return _.map(this.checkedChoices, 'value');
 
@@ -415,20 +417,12 @@ class CheckBoxPlus extends Base {
      *  @overwrite
      */
     onInverseKey() {
-
+        var self = this;
         var checkedChoices = this.checkedChoices;
         var self = this;
         this.choices.forEach(function (choice) {
             if (choice.type !== 'separator') {
-                choice.checked = !choice.checked;
-                // add
-                if (choice.checked) {
-                    checkedChoices.push(choice);
-                } else {
-                    _.remove(checkedChoices, function (checkedChoice) {
-                        return _.isEqual(choice.value, checkedChoice.value);
-                    });
-                }
+                self.toggleChoice(choice, !choice.checked);
             }
         });
 
@@ -496,6 +490,7 @@ class CheckBoxPlus extends Base {
     onAllKey() {
 
         var checkedChoices = this.checkedChoices;
+        var self = this;
 
         var shouldBeChecked = Boolean(
             this.choices.find(function (choice) {
@@ -504,16 +499,10 @@ class CheckBoxPlus extends Base {
         );
         this.choices.forEach(function (choice) {
             if (choice.type !== 'separator') {
-                choice.checked = shouldBeChecked;
-            }
-            // add 
-            if (shouldBeChecked) {
-                checkedChoices.push(choice);
+                self.toggleChoice(choice, shouldBeChecked);
             }
         });
 
-        // add 
-        !shouldBeChecked && (this.checkedChoices = []);
 
         this.render();
 
@@ -679,6 +668,8 @@ class CheckBoxPlus extends Base {
         }
 
         sourcePromise.then(function (choices) {
+
+            self.checkedChoices.length = 0;
 
             // Is not the last issued promise
             if (self.lastSourcePromise !== sourcePromise) {

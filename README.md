@@ -1,6 +1,5 @@
 # inquirer-checkbox-plus
-Better [inquirer-checkbox-plus-prompt](https://github.com/faressoft/inquirer-checkbox-plus-prompt)
-
+ Inspired by [inquirer-checkbox-plus-prompt](https://github.com/faressoft/inquirer-checkbox-plus-prompt)
 
 
 ### Installation

@@ -16,8 +16,8 @@ var Phone = [{
     type: 'cellphone',
 }, {
     name: 'HUAWEI',
-    value: 'green',
-    short: 'green',
+    value: 'HUAWEI',
+    short: 'HUAWEI',
     disabled: false,
     type: 'cellphone',
 }, {
