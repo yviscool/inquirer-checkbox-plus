@@ -21,7 +21,7 @@ inquirer.prompt({
 
 ### options
 
-Takes `type`, `name`, `message`, `source`[, `filter`, `validate`, `default`, `pageSize`, `highlight`, `searchable`, `enablebackspace`, `answer`,`footer`,`header`,`keypress`,`searching`,`noresult`] properties.
+Takes `type`, `name`, `message`, `source`[ `filter`, `validate`, `default`, `pageSize`, `highlight`, `searchable`, `enablebackspace`, `answer`,`footer`,`header`,`keypress`,`searching`,`noresult`] properties.
 
 * **highlight**:  (Function/Boolean)
 * **answer**:  (Function)
